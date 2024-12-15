@@ -43,13 +43,21 @@ connection.close()
 
 @bot.message_handler(commands=['start'])
 def handle_start(message):
+    k = telebot.types.InlineKeyboardMarkup()
+    btn_get_photo = telebot.types.InlineKeyboardButton("Хочу пожелание", callback_data="0")   
+    k.add(btn_get_photo)
+    bot.send_message(message.chat.id,"Привет!\nС наступающим Новым годом 🎄🎅\nЗаходи в этот бот каждый день, чтобы получить новое IT-пожелание. ",reply_markup=k)
+
+
+@bot.callback_query_handler(func=lambda callback: True)
+def handle_callback(callback):
     global a
     connection = sqlite3.connect("jelania.db")
     cursor_object = connection.execute(
         f"""
             SELECT jelania
             FROM jelanis
-            WHERE chat_id = {message.chat.id}
+            WHERE chat_id = {callback.message.chat.id}
         """
     )
     # достаем все данные и перебираем список
@@ -58,12 +66,14 @@ def handle_start(message):
     sp +=str(current_datetime.day)+ " " +str(current_datetime.month)+ " "+str(current_datetime.year)
     g =cursor_object.fetchall()
     connection.close()
+    t = False
     if g==[]:
+        t = True
         g= a.split()
         connection = sqlite3.connect("jelania.db")
         cursor_object = connection.execute(f"""
         INSERT INTO jelanis(chat_id, jelania, data) 
-        VALUES ({message.chat.id}, '{a}', '{sp}')
+        VALUES ({callback.message.chat.id}, '{a}', '{sp}')
         """)
         connection.commit()
         connection.close()
@@ -74,11 +84,11 @@ def handle_start(message):
         f"""
             SELECT data
             FROM jelanis
-            WHERE chat_id = {message.chat.id}
+            WHERE chat_id = {callback.message.chat.id}
         """
     )
     sd = cursor_object.fetchall()[0][0]
-    if sp!=sd:
+    if sp!=sd or t:
         f = g[random.randint(0,len(g)-1)]
         g.remove(f)
         s =""
@@ -90,11 +100,11 @@ def handle_start(message):
         SQL_UPDATE_TABLE = f"""
         UPDATE jelanis
         SET jelania = '{s}', data = '{sp}'
-        WHERE chat_id = {message.chat.id}
+        WHERE chat_id = {callback.message.chat.id}
         """
         connection.execute(SQL_UPDATE_TABLE)
         connection.commit()
-        bot.send_message(message.chat.id, f)
+        bot.send_message(callback.message.chat.id, f)
         connection.close()
 
 bot.polling(non_stop=True, interval=1)
