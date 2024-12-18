@@ -137,6 +137,7 @@ def handle_callback(callback):
         bot.send_message(
             callback.message.chat.id, "вы уже получили пожелание, возвращайтесь завтра"
         )
+    bot.answer_callback_query(callback.id)
 
 
 bot.polling(non_stop=True, interval=1)
